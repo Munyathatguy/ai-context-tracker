@@ -1,0 +1,31 @@
+# ai-context-tracker configuration
+# API keys are read ONLY from environment variables, never from this file:
+#   OPENAI_API_KEY / OPENAI_ADMIN_KEY / ANTHROPIC_API_KEY / ANTHROPIC_ADMIN_KEY / GOOGLE_API_KEY
+
+provider: anthropic          # openai | anthropic | google
+model: claude-sonnet-4-5     # default model (auto-detected on record_usage)
+timezone: UTC                # e.g. America/New_York
+
+# percent of context window REMAINING at which to alert (any number of levels)
+alert_thresholds: [30, 20, 10]
+red_alert_threshold: 10      # at/below this: instruct the AI to stop expanding and wrap up
+danger_threshold: 15         # context-health danger zone; triggers handoff advice
+auto_handoff: true           # also auto-save a handoff summary at the danger threshold
+
+features:
+  token_tracking: true
+  time_awareness: true
+  context_health: true
+  session_continuity: true
+  model_awareness: true
+  task_tracking: true
+  cost_tracking: true
+  turn_counter: true
+
+# USD per 1M tokens — update as prices change, merged over the built-in registry
+model_overrides: {}
+#  my-custom-model:
+#    context_window: 256000
+#    max_output: 32000
+#    price_in: 1.0
+#    price_out: 5.0

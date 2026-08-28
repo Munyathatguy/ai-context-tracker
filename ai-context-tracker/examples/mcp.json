@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "context-tracker": {
+      "command": "ai-context-tracker",
+      "args": ["serve"],
+      "env": {}
+    }
+  }
+}

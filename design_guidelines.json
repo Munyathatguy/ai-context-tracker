@@ -1,0 +1,119 @@
+{
+  "theme": "dark",
+  "typography": {
+    "heading_font": "Chivo",
+    "body_font": "JetBrains Mono",
+    "font_install_commands": [
+      "yarn add @fontsource/chivo",
+      "yarn add @fontsource/jetbrains-mono"
+    ],
+    "rules": [
+      "Use Chivo for all headings (H1-H4). Do NOT use Inter, Roboto, Lato, or Space Grotesk.",
+      "Use JetBrains Mono for all body text, metrics, numbers, and data points to emphasize the developer/terminal feel.",
+      "Headings should use tracking-tight. Data points should use tracking-tighter."
+    ]
+  },
+  "colors": {
+    "archetype": "SWISS & HIGH-CONTRAST / RETRO-FUTURISM",
+    "background": "bg-[#0A0A0A]",
+    "surface": "bg-[#111111]",
+    "border": "border-[#222222]",
+    "primary": "text-white",
+    "secondary": "text-[#888888]",
+    "accents": {
+      "healthy": "text-[#00FF00]",
+      "info": "text-[#00BFFF]",
+      "warning": "text-[#FFD700]",
+      "danger": "text-[#FF3B30]",
+      "cost": "text-[#00FF00]"
+    },
+    "forbidden_colors": [
+      "#7351B7",
+      "#1B93A4"
+    ]
+  },
+  "visual_enhancers": {
+    "surface_strategy": "Grid Borders (The 'Technical' Look)",
+    "rules": [
+      "Expose the skeleton. Use 1px subtle borders (border-border) on cards.",
+      "No rounded corners on major panels (rounded-none or max rounded-sm) to keep the brutalist/technical aesthetic.",
+      "No soft shadows. Use sharp inner contrasts or flat surfaces.",
+      "Include scanlines or subtle grid backgrounds for the terminal look.",
+      "DO NOT use complete transparent background in header, overlays, any surface that has content under it."
+    ]
+  },
+  "layouts": {
+    "strategy": "MODE B: High Density Grid",
+    "container": "h-screen w-full flex overflow-hidden bg-[#0A0A0A] text-white font-mono",
+    "structure": [
+      "Sidebar (col-span-3 or fixed width): Session List / Resume. Shows active and past sessions.",
+      "Main Content (flex-1 or col-span-9): Scrollable dashboard area.",
+      "Dashboard Grid: grid-cols-1 md:grid-cols-12 gap-4 p-6",
+      "Widgets span logic: Metrics (Cost, Turns, Timeline) take 3-4 cols each. Context Gauge takes 4 cols, Token Breakdown takes 8 cols."
+    ]
+  },
+  "components": {
+    "required_shadcn": [
+      "card",
+      "progress",
+      "badge",
+      "scroll-area",
+      "separator",
+      "checkbox"
+    ],
+    "customizations": [
+      "Cards: Cardless or sharp borders. Remove shadows. Use bg-[#111111] and border-[#222222].",
+      "Badges: Use sharp borders and high contrast colors matching the alert states.",
+      "Progress: Flat, sharp corners. Use specific accent colors for thresholds (green/yellow/red)."
+    ]
+  },
+  "motion": {
+    "rules": [
+      "Minimalist animations. Use micro-interactions for feedback on hover.",
+      "Do NOT use 'transition-all'. Target specific properties (e.g., transition-colors).",
+      "Data updates should have slight number-ticker animations if possible, or just fade in."
+    ]
+  },
+  "accessibility": {
+    "rules": [
+      "All interactive elements MUST include a data-testid attribute.",
+      "Ensure minimum 4.5:1 contrast ratio for all text.",
+      "Focus states must have a 2px outline using the info accent color."
+    ]
+  },
+  "media": {
+    "icons": {
+      "library": "@phosphor-icons/react",
+      "install_command": "yarn add @phosphor-icons/react",
+      "usage": "Use for dense dashboard and developer tools. Use 'weight=\"duotone\"' or 'weight=\"regular\"'."
+    },
+    "images": []
+  },
+  "data_visualization": {
+    "library": "recharts",
+    "install_command": "yarn add recharts",
+    "rules": [
+      "Use Recharts for Context Fullness Gauge (RadialBarChart or PieChart) and Token Usage Breakdown (Stacked BarChart or custom Progress bars).",
+      "Use stark, high-contrast colors for charts (e.g., cyan for input, purple for reasoning, gray for cached, blue for output).",
+      "Keep charts flat and sharp. No drop shadows on chart elements."
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Build a single-page React application for the AI Context Awareness Tracker using the provided layout and styling rules.",
+    "Implement the Sidebar for the 'Session List' and the Main Content area for the active session dashboard.",
+    "Create placeholder/mock data for the dashboard state (Token budgets, time awareness, context health, model info, cost, turns).",
+    "Build a Context Fullness Gauge using Recharts or a custom SVG/Shadcn Progress component.",
+    "Build a Token Usage Breakdown showing input/output/cached/reasoning breakdown.",
+    "Implement the Alert Threshold States (warn/danger/red-alert) as prominent badges or a dedicated status panel.",
+    "Ensure all components use `data-testid` (e.g., data-testid='context-gauge', data-testid='session-item-1').",
+    "Use JetBrains Mono for all numeric data and Chivo for widget headers."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Do not apply universal transition (e.g., transition: all).",
+    "Do not center align the app container (.App { text-align: center; }).",
+    "Use Phosphor icons. Do not use AI emojis.",
+    "Never use placeholder URLs.",
+    "All interactive and key informational elements MUST include a data-testid attribute.",
+    "Follow the theme and color archetypes strictly."
+  ]
+}

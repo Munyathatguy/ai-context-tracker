@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ai-context-tracker"
+version = "0.1.0"
+description = "MCP server that injects real-time operational awareness into any compatible AI client: token budgets, time awareness, context health, session continuity, crash recovery."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+authors = [{ name = "ai-context-tracker contributors" }]
+keywords = ["mcp", "model-context-protocol", "tokens", "context-window", "ai", "claude", "openai", "gemini"]
+dependencies = [
+    "mcp>=1.9,<2",
+    "pyyaml>=6.0",
+    "httpx>=0.27",
+    "rich>=13.7",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+ai-context-tracker = "ai_context_tracker.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ai_context_tracker"]
