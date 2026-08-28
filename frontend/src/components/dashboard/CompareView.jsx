@@ -51,10 +51,10 @@ export const CompareView = ({ sessions }) => {
       <h2 className="font-heading font-bold text-sm uppercase tracking-tight mb-4">Session Compare — token & cost burn</h2>
       <div className="grid grid-cols-2 gap-4 mb-4 max-w-3xl">
         <select data-testid="compare-select-a" className={select} value={idA} onChange={(e) => setIdA(e.target.value)}>
-          {sessions.map((s) => <option key={s.session_id} value={s.session_id}>{s.session_id} · {s.model}</option>)}
+          {sessions.map((s) => <option key={s.session_id} value={s.session_id}>{`${s.session_id} · ${s.model}`}</option>)}
         </select>
         <select data-testid="compare-select-b" className={select} value={idB} onChange={(e) => setIdB(e.target.value)}>
-          {sessions.map((s) => <option key={s.session_id} value={s.session_id}>{s.session_id} · {s.model}</option>)}
+          {sessions.map((s) => <option key={s.session_id} value={s.session_id}>{`${s.session_id} · ${s.model}`}</option>)}
         </select>
       </div>
       {a && b && (

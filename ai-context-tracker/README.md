@@ -114,4 +114,11 @@ pip install -e ".[dev]"
 pytest
 ```
 
+## Documentation
+
+- [TESTING.md](TESTING.md) — verify every feature yourself, step by step
+- [ROADMAP.md](ROADMAP.md) — shipped + planned features
+- [CHANGELOG.md](CHANGELOG.md) — release notes
+- [CONTRIBUTING.md](CONTRIBUTING.md) — dev setup and guidelines
+
 MIT licensed. Contributions welcome.

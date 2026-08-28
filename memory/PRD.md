@@ -49,6 +49,11 @@ A free, open-source MCP (Model Context Protocol) server that injects real-time o
 - Seed now creates 3 sessions (claude latest, gemini scratch, gpt-5.1); 31 package tests
 - Known non-blocking: Radix Dialog a11y description warning; no un-archive UI (files restorable from ~/.ai-context-tracker/archive/)
 
+## Implemented v5 (2026-06, iteration 5 — docs, 100%/100% verified)
+- Docs: ROADMAP.md (shipped/near/mid/long-term features), TESTING.md (8-section user test guide, validated verbatim by testing agent), CHANGELOG.md (v0.1.0), README doc links, /app/README.md monorepo overview
+- Root /app/.github/workflows/{ci,publish}.yml adapted with working-directory for monorepo push; package-nested copies remain for standalone-repo publishing
+- Fixed hydration warning (template-string option labels in CompareView); latest claude demo session now turn 8
+
 ## Backlog / Next
 - P1: PyPI publish workflow (GitHub Action), demo GIF, CONTRIBUTING.md
 - P2: streamable HTTP transport, rate-limit header surfacing tool, auto-resume prompt on server restart detection
