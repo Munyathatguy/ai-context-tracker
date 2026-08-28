@@ -59,6 +59,10 @@ class ContextTracker:
         self.state.add_summary(summary)
         spec = self.model_spec
         self.state.cost_usd += (input_tokens * spec["price_in"] + output_tokens * spec["price_out"]) / 1_000_000
+        self.state.turn_history.append({
+            "turn": self.state.turn, "total": u["total"], "input": u["input"], "output": u["output"],
+            "cost": round(self.state.cost_usd, 4), "at": self.state.last_message_at})
+        self.state.turn_history = self.state.turn_history[-500:]
         new_alerts = []
         if self.config.features.get("token_tracking", True):
             new_alerts = evaluate(self.pct_remaining(), self.config.alert_thresholds,

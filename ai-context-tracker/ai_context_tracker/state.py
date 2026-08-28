@@ -20,6 +20,7 @@ class SessionState:
     usage: dict = field(default_factory=lambda: {"input": 0, "output": 0, "cached": 0, "reasoning": 0, "total": 0})
     cost_usd: float = 0.0
     tasks: list = field(default_factory=list)
+    turn_history: list = field(default_factory=list)
     message_summaries: list = field(default_factory=list)
     handoffs: list = field(default_factory=list)
     alerts_fired: list = field(default_factory=list)

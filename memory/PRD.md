@@ -41,6 +41,14 @@ A free, open-source MCP (Model Context Protocol) server that injects real-time o
 - Sound Alerts: Web Audio chime on new danger/red alert, mute toggle persisted in localStorage
 - GitHub push: user-side action via Emergent "Save to GitHub" (support guidance provided); workflows activate on push, PyPI needs one-time Trusted Publisher setup
 
+## Implemented v4 (2026-06, iteration 4 — 100%/100% verified)
+- Handoff Reader: handoff cards clickable → full dialog (goals/progress/remaining/decisions/task snapshot/meta)
+- Burn Rate Chart: state.turn_history (appended each record_usage, capped 500) + dual-axis recharts line (tokens cyan / cost green), empty state <2 turns
+- Org Usage Panel: GET /api/tracker/org-usage?provider&days (422 unknown provider, days clamped 1-31) + panel with provider/days/fetch; shows admin-key error or Google note when keys absent
+- Session Cleanup: POST /sessions/{id}/archive (moves to archive/), DELETE /sessions/{id}, _fix_latest repoints latest.json; sidebar hover archive/trash buttons, double-click delete confirm, SSE auto-refresh
+- Seed now creates 3 sessions (claude latest, gemini scratch, gpt-5.1); 31 package tests
+- Known non-blocking: Radix Dialog a11y description warning; no un-archive UI (files restorable from ~/.ai-context-tracker/archive/)
+
 ## Backlog / Next
 - P1: PyPI publish workflow (GitHub Action), demo GIF, CONTRIBUTING.md
 - P2: streamable HTTP transport, rate-limit header surfacing tool, auto-resume prompt on server restart detection

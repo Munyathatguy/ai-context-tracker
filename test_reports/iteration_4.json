@@ -1,0 +1,27 @@
+{
+  "summary": "Iteration 4 verified 100%. Package: 31/31 pytest pass (includes new test_turn_history_tracks_burn). Backend (9/9 new pytest in test_iteration4.py): GET /api/tracker/org-usage — anthropic returns {error: 'ANTHROPIC_ADMIN_KEY not set…'}, openai returns OPENAI_ADMIN_KEY error, google returns {note:…}, bogus provider -> 422. GET /api/tracker/sessions/3aacc4b13b92 -> session.turn_history has exactly 7 entries each with keys turn/total/input/output/cost/at and monotonically increasing total. Archive: created throwaway via ContextTracker.record_usage; POST /sessions/{id}/archive -> 200, file moved from sessions/ to archive/, id removed from list, latest_session_id fixed. DELETE /sessions/{id} on second throwaway -> 200, file removed. Both endpoints -> 404 for unknown ids. Frontend (Playwright, data-testid selectors): Handoff Reader — clicking handoff-0 on claude seeded session opens handoff-dialog containing Goals/Progress/Remaining/Decisions text; Escape closes. Burn Rate Chart — burn-rate-chart renders SVG with dual-axis line for claude session (7 turns); burn-empty message 'not enough turns recorded yet — burn history appears after 2+ exchanges' shown for gemini 0b15287ef875 (turn 1). Org Usage Panel — org-provider-select + org-days-input + org-fetch-btn present; anthropic fetch shows 'ANTHROPIC_ADMIN_KEY not set — org-level usage requires an Admin API key' in org-usage-result; google fetch shows the note about AI Studio/BigQuery. Session Cleanup — created 2 throwaway sessions (4156acfeab5c, ee190962a3e2) via ContextTracker; hover reveals session-archive-{id} and session-delete-{id}; archive click removes row within ~2.5s via SSE; delete needs double-click (first click shows delete-confirm-{id} hint, second click deletes). SSE updated sidebar and selection reverted to seeded 3aacc4b13b92. Regression: settings-open-btn opens dialog, compare-toggle-btn shows compare-view, all 3 seeded sessions (3aacc4b13b92 claude, 0b15287ef875 gemini, b98b6f902048 gpt-5.1) intact at end; no console errors (only benign a11y Description warnings on DialogContent).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "HandoffDialog / SettingsDialog", "issues": ["Radix DialogContent missing Description/aria-describedby (console a11y warning). Non-blocking but should add DialogDescription for screen-reader users."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_iteration4.py", "/app/test_reports/pytest/iter4.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Delete confirm UX relies on a transient hint (delete-confirm-{id}) that likely times out — consider explicit confirmation modal for destructive ops, or at least a visible countdown/second-click affordance.",
+    "Archive endpoint currently supports one-way move; there is no un-archive/restore endpoint or UI to browse /archive/. Consider adding GET /api/tracker/archive and POST /sessions/{id}/restore for completeness.",
+    "turn_history is appended on every record_usage but not bounded — for long-lived sessions this array grows unbounded in JSON state. Add a cap (e.g., last 500 turns) or downsampling for very long sessions.",
+    "Org Usage Panel: no client-side validation on org-days-input (accepts arbitrary integers/negatives). Backend enum validation covers provider but days is not bounded."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration4.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "N/A — no auth required.",
+  "seed_data_creation": "Two throwaway sessions were created via ai_context_tracker.ContextTracker.record_usage() and then archived/deleted through the API as part of the test. Archive folder cleaned up at end. Latest.json restored to seeded 3aacc4b13b92. Final state: only the 3 seeded sessions (3aacc4b13b92, 0b15287ef875, b98b6f902048) remain; /root/.ai-context-tracker/archive/ is empty.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iter4 selectors: session-item-{id} (not session-row-{id}); compare-toggle-btn (not compare-toggle); burn-empty and burn-rate-chart are separate testids; handoff-dialog + handoff-{i}. When creating throwaway sessions, use `t = ContextTracker(Config(state_dir='/root/.ai-context-tracker')); t.record_usage(10,10); print(t.state.session_id)` — note `.state.session_id` not `.session_id`. Backend GET /api/tracker/sessions returns dict {sessions, latest_session_id}. Do not archive/delete the 3 seeded sessions.",
+  "rca of the issue": "N/A — all features passed."
+}

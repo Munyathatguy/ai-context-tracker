@@ -22,6 +22,7 @@ load_dotenv(ROOT_DIR / '.env')
 sys.path.insert(0, "/app/ai-context-tracker")
 from ai_context_tracker.config import load_config
 from ai_context_tracker.models import resolve_model
+from ai_context_tracker.providers import get_provider
 from ai_context_tracker.state import SessionState
 
 mongo_url = os.environ['MONGO_URL']
@@ -98,6 +99,48 @@ async def stream(session_id: str = ""):
 
 
 CONFIG_PATH = STATE_DIR / "config.yaml"
+
+
+def _fix_latest():
+    remaining = SessionState.list_sessions(STATE_DIR)
+    ptr = STATE_DIR / "latest.json"
+    cur = _latest_id()
+    if cur and any(s["session_id"] == cur for s in remaining):
+        return
+    if remaining:
+        ptr.write_text(json.dumps({"session_id": remaining[0]["session_id"]}))
+    elif ptr.is_file():
+        ptr.unlink()
+
+
+@api_router.post("/tracker/sessions/{session_id}/archive")
+async def archive_session(session_id: str):
+    f = STATE_DIR / "sessions" / f"{session_id}.json"
+    if not f.is_file():
+        raise HTTPException(status_code=404, detail="session not found")
+    dest = STATE_DIR / "archive"
+    dest.mkdir(parents=True, exist_ok=True)
+    f.rename(dest / f.name)
+    _fix_latest()
+    return {"archived": session_id}
+
+
+@api_router.delete("/tracker/sessions/{session_id}")
+async def delete_session(session_id: str):
+    f = STATE_DIR / "sessions" / f"{session_id}.json"
+    if not f.is_file():
+        raise HTTPException(status_code=404, detail="session not found")
+    f.unlink()
+    _fix_latest()
+    return {"deleted": session_id}
+
+
+@api_router.get("/tracker/org-usage")
+async def org_usage(provider: str = "openai", days: int = 7):
+    p = get_provider(provider)
+    if not p:
+        raise HTTPException(status_code=422, detail=f"unknown provider: {provider}")
+    return await asyncio.to_thread(p.get_org_usage, max(1, min(days, 31)))
 
 
 class TrackerConfigUpdate(BaseModel):

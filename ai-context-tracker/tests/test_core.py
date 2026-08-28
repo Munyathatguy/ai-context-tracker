@@ -79,6 +79,15 @@ def test_summaries_keep_last_three(tmp_path):
     assert [s["text"] for s in t.state.message_summaries] == ["turn 2", "turn 3", "turn 4"]
 
 
+def test_turn_history_tracks_burn(tmp_path):
+    t = make_tracker(tmp_path)
+    t.record_usage(100, 50)
+    t.record_usage(200, 100)
+    assert [h["turn"] for h in t.state.turn_history] == [1, 2]
+    assert t.state.turn_history[-1]["total"] == 450
+    assert t.state.turn_history[-1]["cost"] > t.state.turn_history[0]["cost"]
+
+
 def test_list_sessions(tmp_path):
     make_tracker(tmp_path).record_usage(10, 10)
     make_tracker(tmp_path).record_usage(20, 20)

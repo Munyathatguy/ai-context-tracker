@@ -13,7 +13,11 @@ import { MetricRow, ModelCard, TimelineCard } from "./components/dashboard/Panel
 import { AlertsPanel, TasksPanel, HandoffsPanel } from "./components/dashboard/Activity";
 import { SettingsDialog } from "./components/dashboard/SettingsDialog";
 import { CompareView } from "./components/dashboard/CompareView";
+import { BurnRateChart } from "./components/dashboard/BurnRateChart";
+import { OrgUsagePanel } from "./components/dashboard/OrgUsagePanel";
 import { Toaster } from "./components/ui/sonner";
+import { toast } from "sonner";
+import axios from "axios";
 import { ArrowsLeftRight, SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
 
 const playChime = () => {
@@ -65,6 +69,26 @@ export default function App() {
     localStorage.setItem("act-muted", next ? "1" : "0");
   };
 
+  const archiveSession = async (id) => {
+    try {
+      await axios.post(`${API}/tracker/sessions/${id}/archive`);
+      toast.success(`Session ${id} archived (moved to ~/.ai-context-tracker/archive)`);
+      if (id === selectedId) setSelectedId(null);
+    } catch (e) {
+      toast.error("Archive failed");
+    }
+  };
+
+  const deleteSession = async (id) => {
+    try {
+      await axios.delete(`${API}/tracker/sessions/${id}`);
+      toast.success(`Session ${id} deleted`);
+      if (id === selectedId) setSelectedId(null);
+    } catch (e) {
+      toast.error("Delete failed");
+    }
+  };
+
   useEffect(() => {
     const url = `${API}/tracker/stream${selectedId ? `?session_id=${selectedId}` : ""}`;
     const es = new EventSource(url);
@@ -72,8 +96,11 @@ export default function App() {
       const data = JSON.parse(ev.data);
       setSessions(data.sessions);
       setLatestId(data.latest_session_id);
-      setSelectedId((cur) => cur || data.latest_session_id || data.sessions[0]?.session_id || null);
+      const ids = data.sessions.map((x) => x.session_id);
+      setSelectedId((cur) => (cur && ids.includes(cur) ? cur
+        : data.latest_session_id || data.sessions[0]?.session_id || null));
       if (data.detail) setDetail(data.detail);
+      else if (data.sessions.length === 0) setDetail(null);
       setError(null);
     };
     es.onerror = () => setError("Live stream interrupted — reconnecting…");
@@ -84,7 +111,8 @@ export default function App() {
 
   return (
     <div className="h-screen w-full flex overflow-hidden bg-[#0A0A0A] text-white font-mono scanlines" data-testid="app-root">
-      <Sidebar sessions={sessions} selectedId={selectedId} latestId={latestId} onSelect={setSelectedId} />
+      <Sidebar sessions={sessions} selectedId={selectedId} latestId={latestId} onSelect={setSelectedId}
+        onArchive={archiveSession} onDelete={deleteSession} />
       <main className="flex-1 overflow-y-auto">
         <header className="border-b border-[#222222] px-6 py-4 flex items-center justify-between sticky top-0 bg-[#0A0A0A] z-10">
           <div>
@@ -136,6 +164,8 @@ export default function App() {
             <div className="md:col-span-4"><AlertsPanel alerts={s.active_alerts} rateLimits={s.rate_limits} /></div>
             <div className="md:col-span-6"><TasksPanel tasks={s.tasks} /></div>
             <div className="md:col-span-6"><HandoffsPanel handoffs={s.handoffs} summaries={s.message_summaries} /></div>
+            <div className="md:col-span-8"><BurnRateChart history={s.turn_history} /></div>
+            <div className="md:col-span-4"><OrgUsagePanel defaultProvider={detail.model_spec.provider} /></div>
           </div>
         )}
       </main>

@@ -39,6 +39,10 @@ t2.update_task("Prototype awareness header format", "done")
 t2.record_usage(2800, 1200, 0, 450, model="gpt-5.1", summary="Prototyped [AWARENESS] header format")
 t2.record_usage(5200, 2400, 800, 900, model="gpt-5.1", summary="Validated header against Claude Code output")
 
+# Session 3: small scratch Gemini session (handy for testing archive/delete)
+t3 = ContextTracker(Config(state_dir=state_dir, model="gemini-2.5-flash", provider="google"))
+t3.record_usage(1200, 400, model="gemini-2.5-flash", summary="Scratch exploration session")
+
 # Session 1 is latest
 t.record_usage(6200, 2100, 4100, 0, model="claude-sonnet-4-5",
                summary="Fixed edge case; alerts now fire exactly once per threshold",

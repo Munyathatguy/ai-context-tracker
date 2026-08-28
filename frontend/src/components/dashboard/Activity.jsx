@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Warning, CheckSquare, Square, CircleHalf, FileText } from "@phosphor-icons/react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 
 const LEVEL = {
   warn: { color: "#FFD700", label: "WARN" },
@@ -72,20 +74,31 @@ export const TasksPanel = ({ tasks = [] }) => {
   );
 };
 
-export const HandoffsPanel = ({ handoffs = [], summaries = [] }) => (
+const HSection = ({ title, text }) => (
+  <div>
+    <div className="text-[10px] uppercase tracking-widest text-[#00BFFF] mb-1">{title}</div>
+    <p className="text-xs text-[#cccccc] whitespace-pre-wrap leading-relaxed">{text || "n/a"}</p>
+  </div>
+);
+
+export const HandoffsPanel = ({ handoffs = [], summaries = [] }) => {
+  const [sel, setSel] = useState(null);
+  return (
   <section className="border border-[#222222] bg-[#111111] p-4 h-full" data-testid="handoffs-panel">
     <h2 className="font-heading font-bold text-xs uppercase tracking-widest text-[#888888] mb-3">
       Continuity — Handoffs & Recent Activity
     </h2>
     <div className="space-y-2 max-h-56 overflow-y-auto">
       {handoffs.map((h, i) => (
-        <div key={i} className="border border-[#00BFFF] p-2" data-testid={`handoff-${i}`}>
-          <div className="flex items-center gap-2 text-[10px] font-bold text-[#00BFFF]">
-            <FileText size={12} weight="duotone" /> HANDOFF {h.auto ? "(AUTO)" : ""} · turn {h.turn}
+        <button key={i} onClick={() => setSel(h)} data-testid={`handoff-${i}`}
+          className="w-full text-left border border-[#00BFFF] p-2 hover:bg-[#0d1b22] transition-colors">
+          <div className="flex items-center justify-between text-[10px] font-bold text-[#00BFFF]">
+            <span className="flex items-center gap-2"><FileText size={12} weight="duotone" /> HANDOFF {h.auto ? "(AUTO)" : ""} · turn {h.turn}</span>
+            <span className="text-[#888888] font-normal">click to read →</span>
           </div>
-          <p className="text-[11px] text-[#cccccc] mt-1"><span className="text-[#888888]">goals:</span> {h.goals}</p>
-          <p className="text-[11px] text-[#cccccc]"><span className="text-[#888888]">remaining:</span> {h.remaining_tasks}</p>
-        </div>
+          <p className="text-[11px] text-[#cccccc] mt-1 truncate"><span className="text-[#888888]">goals:</span> {h.goals}</p>
+          <p className="text-[11px] text-[#cccccc] truncate"><span className="text-[#888888]">remaining:</span> {h.remaining_tasks}</p>
+        </button>
       ))}
       {summaries.length > 0 && (
         <div className="pt-2 border-t border-[#222222]">
@@ -97,5 +110,36 @@ export const HandoffsPanel = ({ handoffs = [], summaries = [] }) => (
       )}
       {handoffs.length === 0 && summaries.length === 0 && <div className="text-xs text-[#666666]">nothing saved yet</div>}
     </div>
+    <Dialog open={!!sel} onOpenChange={(o) => !o && setSel(null)}>
+      <DialogContent className="bg-[#111111] border border-[#333333] rounded-none text-white font-mono max-w-lg max-h-[80vh] overflow-y-auto" data-testid="handoff-dialog">
+        <DialogHeader>
+          <DialogTitle className="font-heading uppercase tracking-tight text-sm text-[#00BFFF]">
+            Session Handoff {sel?.auto ? "(auto-generated)" : ""}
+          </DialogTitle>
+        </DialogHeader>
+        {sel && (
+          <div className="space-y-4">
+            <div className="text-[10px] text-[#888888] border-b border-[#222222] pb-2">
+              {sel.created_at?.slice(0, 19).replace("T", " ")} UTC · model {sel.model} · turn {sel.turn} ·{" "}
+              {(sel.usage?.total || 0).toLocaleString()} tokens · ${sel.cost_usd}
+            </div>
+            <HSection title="Goals" text={sel.goals} />
+            <HSection title="Progress" text={sel.progress} />
+            <HSection title="Remaining Tasks" text={sel.remaining_tasks} />
+            <HSection title="Key Decisions" text={sel.key_decisions} />
+            {sel.tasks?.length > 0 && (
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-[#00BFFF] mb-1">Task snapshot</div>
+                {sel.tasks.map((t) => (
+                  <div key={t.id} className="text-xs text-[#cccccc]">[{t.status}] {t.title}</div>
+                ))}
+              </div>
+            )}
+            <p className="text-[10px] text-[#555555]">Also saved to disk as JSON + markdown under ~/.ai-context-tracker/handoffs/</p>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   </section>
-);
+  );
+};
