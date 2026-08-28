@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 
@@ -29,7 +29,7 @@ class AnthropicProvider(ProviderAdapter):
         key = os.environ.get("ANTHROPIC_ADMIN_KEY")
         if not key:
             return {"error": "ANTHROPIC_ADMIN_KEY not set — org-level usage requires an Admin API key"}
-        start = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        start = (datetime.now(UTC) - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
         try:
             r = httpx.get(f"{BASE}/organizations/usage_report/messages", timeout=20,
                           headers={"x-api-key": key, "anthropic-version": VERSION},

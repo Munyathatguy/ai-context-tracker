@@ -1,11 +1,14 @@
 """MCP server exposing awareness tools over stdio."""
 import json
+from datetime import UTC, datetime
 
 from mcp.server.fastmcp import FastMCP
 
 from .config import load_config
-from .models import resolve_model, capabilities_line
+from .models import capabilities_line, resolve_model
 from .providers import get_provider
+from .state import SessionState
+from .timefmt import humanize_gap
 from .tracker import ContextTracker
 
 mcp = FastMCP("ai-context-tracker")
@@ -16,12 +19,24 @@ def get_tracker() -> ContextTracker:
     global _tracker
     if _tracker is None:
         _tracker = ContextTracker(load_config())
+        prev = SessionState.load_latest(_tracker.config.state_dir)
+        if prev and prev.turn > 0 and prev.session_id != _tracker.state.session_id:
+            gap = (datetime.now(UTC) - datetime.fromisoformat(prev.last_message_at)).total_seconds()
+            _tracker.resume_offer = (
+                f"💾 Previous session detected: {prev.session_id} (model {prev.model}, turn {prev.turn}, "
+                f"{prev.usage['total']:,} tokens, last active {humanize_gap(gap)}). "
+                "Ask the user if they want to continue it — call resume_session to restore tasks, "
+                "summaries and handoffs, or ignore to start fresh.")
     return _tracker
 
 
 def _wrap(body: str, extra_alerts: list | None = None) -> str:
     t = get_tracker()
     lines = [f"[AWARENESS] {t.header()}"]
+    offer = getattr(t, "resume_offer", None)
+    if offer:
+        lines.append(offer)
+        t.resume_offer = None
     for a in (extra_alerts or []):
         lines.append(a["message"] if isinstance(a, dict) else str(a))
     lines.append("")
@@ -38,12 +53,17 @@ def get_status() -> str:
 
 @mcp.tool()
 def record_usage(input_tokens: int, output_tokens: int, cached_tokens: int = 0,
-                 reasoning_tokens: int = 0, model: str = "", summary: str = "") -> str:
+                 reasoning_tokens: int = 0, model: str = "", summary: str = "",
+                 rate_limit_remaining_tokens: int = -1, rate_limit_limit_tokens: int = -1) -> str:
     """Record token usage from the latest API exchange. Call this every turn with the usage
-    numbers from the response metadata. Optionally pass the model id and a one-line summary
-    of what happened this turn (used for crash recovery)."""
+    numbers from the response metadata. Optionally pass the model id, a one-line summary
+    of what happened this turn (used for crash recovery), and rate-limit headroom from the
+    response headers (e.g. x-ratelimit-remaining-tokens / x-ratelimit-limit-tokens)."""
     t = get_tracker()
-    result = t.record_usage(input_tokens, output_tokens, cached_tokens, reasoning_tokens, model, summary)
+    result = t.record_usage(
+        input_tokens, output_tokens, cached_tokens, reasoning_tokens, model, summary,
+        rl_remaining_tokens=rate_limit_remaining_tokens if rate_limit_remaining_tokens >= 0 else None,
+        rl_limit_tokens=rate_limit_limit_tokens if rate_limit_limit_tokens > 0 else None)
     body = [f"Recorded. Session total: {t.state.usage['total']:,} tokens ({t.pct_used():.1f}% of context window used)."]
     if result["model_switch_brief"]:
         body.append(result["model_switch_brief"])
@@ -85,6 +105,7 @@ def resume_session(session_id: str = "") -> str:
     """Load the most recent saved session (or a specific session_id) and inject its state:
     task checklist, last message summaries, token usage, model config and latest handoff."""
     t = get_tracker()
+    t.resume_offer = None
     st = t.resume(session_id)
     if not st:
         return _wrap("No saved session found. Starting fresh.")

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 
@@ -6,7 +6,7 @@ def _tz(name: str):
     try:
         return ZoneInfo(name)
     except Exception:
-        return timezone.utc
+        return UTC
 
 
 def now_local(tz_name: str) -> datetime:
@@ -33,7 +33,7 @@ def humanize_gap(seconds: float) -> str:
 
 def time_line(tz_name: str, started_at: str, last_message_at: str) -> str:
     now = now_local(tz_name)
-    gap = (datetime.now(timezone.utc) - datetime.fromisoformat(last_message_at)).total_seconds()
+    gap = (datetime.now(UTC) - datetime.fromisoformat(last_message_at)).total_seconds()
     return (f"Current time: {now.strftime('%Y-%m-%d %-I:%M %p %Z')} | "
             f"Session started: {fmt(started_at, tz_name)} | "
             f"Last message: {humanize_gap(gap)}")

@@ -1,12 +1,12 @@
 import json
 import uuid
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
+from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 
 
 def utcnow() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 @dataclass
@@ -25,6 +25,7 @@ class SessionState:
     alerts_fired: list = field(default_factory=list)
     active_alerts: list = field(default_factory=list)
     model_history: list = field(default_factory=list)
+    rate_limits: dict = field(default_factory=dict)
     org_usage: dict = field(default_factory=dict)
 
     # -- persistence ----------------------------------------------------

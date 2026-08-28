@@ -29,6 +29,12 @@ A free, open-source MCP (Model Context Protocol) server that injects real-time o
 - CLI dashboard, README, MIT license, .mcp.json template, config.example.yaml
 - Web dashboard verified end-to-end (testing agent iteration_1: 100% backend, 100% frontend)
 
+## Implemented v2 (2026-06, iteration 2 — 100%/100% verified)
+- GitHub publishing: .github/workflows/ci.yml (pytest 3.11/3.12) + publish.yml (PyPI Trusted Publishing on release) + CONTRIBUTING.md
+- Live streaming: backend SSE /api/tracker/stream (0.7s file watch, keep-alives); frontend EventSource replaces polling
+- Auto resume prompt: MCP server detects prior session on restart, injects one-time "Previous session detected… call resume_session" offer
+- Rate limit watch: record_usage accepts rate-limit headroom (or parsed from headers via integrations.parse_rate_limit_headers); stored in state.rate_limits; alert ≤10%; shown in awareness header, CLI dashboard, and web AlertsPanel; 30 tests total
+
 ## Backlog / Next
 - P1: PyPI publish workflow (GitHub Action), demo GIF, CONTRIBUTING.md
 - P2: streamable HTTP transport, rate-limit header surfacing tool, auto-resume prompt on server restart detection

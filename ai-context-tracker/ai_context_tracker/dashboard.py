@@ -1,11 +1,10 @@
 """htop-style live CLI dashboard reading the shared session state file."""
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from rich.console import Console, Group
 from rich.live import Live
 from rich.panel import Panel
-from rich.progress_bar import ProgressBar
 from rich.table import Table
 from rich.text import Text
 
@@ -28,7 +27,7 @@ def render(config) -> Panel:
                      title="ai-context-tracker", border_style="cyan")
     spec = resolve_model(st.model, config.model_overrides)
     pct = min(100.0, 100.0 * st.usage["total"] / spec["context_window"])
-    gap = (datetime.now(timezone.utc) - datetime.fromisoformat(st.last_message_at)).total_seconds()
+    gap = (datetime.now(UTC) - datetime.fromisoformat(st.last_message_at)).total_seconds()
 
     usage = Table(show_header=False, box=None, pad_edge=False)
     usage.add_row("input", f"{st.usage['input']:,}")
@@ -49,6 +48,11 @@ def render(config) -> Panel:
                  f"turn [bold]{st.turn}[/]", f"cost [bold green]${st.cost_usd:.4f}[/]",
                  f"last msg {humanize_gap(gap)}", f"session {st.session_id}")
 
+    rl = st.rate_limits or {}
+    rl_text = (Text(f"rate limit headroom: {rl['pct_remaining']}% ({rl['remaining_tokens']:,}/{rl['limit_tokens']:,} tokens)",
+                    style="green" if rl.get("pct_remaining", 100) > 30 else ("yellow" if rl.get("pct_remaining", 100) > 10 else "red"))
+               if rl.get("limit_tokens") else Text("rate limit headroom: n/a", style="dim"))
+
     return Panel(Group(
         head,
         Text(f"\ncontext window  {st.usage['total']:,} / {spec['context_window']:,}"),
@@ -56,7 +60,8 @@ def render(config) -> Panel:
         Text("\ntoken breakdown", style="bold"), usage,
         Text("\ntasks", style="bold"), tasks,
         Text("\nalerts", style="bold"), alerts,
-        Text(f"\nhandoffs saved: {len(st.handoffs)} | started {st.started_at[:19]}", style="dim"),
+        Text(""), rl_text,
+        Text(f"handoffs saved: {len(st.handoffs)} | started {st.started_at[:19]}", style="dim"),
     ), title="ai-context-tracker — live session", border_style="cyan")
 
 

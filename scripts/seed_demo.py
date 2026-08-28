@@ -41,5 +41,6 @@ t2.record_usage(5200, 2400, 800, 900, model="gpt-5.1", summary="Validated header
 
 # Session 1 is latest
 t.record_usage(6200, 2100, 4100, 0, model="claude-sonnet-4-5",
-               summary="Fixed edge case; alerts now fire exactly once per threshold")
+               summary="Fixed edge case; alerts now fire exactly once per threshold",
+               rl_remaining_tokens=22_500, rl_limit_tokens=80_000)
 print("seeded:", t.state.session_id, t2.state.session_id, "-> pct used:", round(t.pct_used(), 1))

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import "@/App.css";
 import "@fontsource/chivo/400.css";
 import "@fontsource/chivo/700.css";
@@ -6,7 +6,6 @@ import "@fontsource/chivo/900.css";
 import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/500.css";
 import "@fontsource/jetbrains-mono/700.css";
-import axios from "axios";
 import { Sidebar } from "./components/dashboard/Sidebar";
 import { ContextGauge } from "./components/dashboard/ContextGauge";
 import { TokenBreakdown } from "./components/dashboard/TokenBreakdown";
@@ -22,36 +21,19 @@ export default function App() {
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState(null);
 
-  const loadSessions = useCallback(async () => {
-    try {
-      const { data } = await axios.get(`${API}/tracker/sessions`);
+  useEffect(() => {
+    const url = `${API}/tracker/stream${selectedId ? `?session_id=${selectedId}` : ""}`;
+    const es = new EventSource(url);
+    es.onmessage = (ev) => {
+      const data = JSON.parse(ev.data);
       setSessions(data.sessions);
       setLatestId(data.latest_session_id);
       setSelectedId((cur) => cur || data.latest_session_id || data.sessions[0]?.session_id || null);
+      if (data.detail) setDetail(data.detail);
       setError(null);
-    } catch (e) {
-      setError("Cannot reach companion API");
-    }
-  }, []);
-
-  useEffect(() => {
-    loadSessions();
-    const id = setInterval(loadSessions, 5000);
-    return () => clearInterval(id);
-  }, [loadSessions]);
-
-  useEffect(() => {
-    if (!selectedId) return;
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const { data } = await axios.get(`${API}/tracker/sessions/${selectedId}`);
-        if (!cancelled) setDetail(data);
-      } catch (e) {}
     };
-    load();
-    const id = setInterval(load, 3000);
-    return () => { cancelled = true; clearInterval(id); };
+    es.onerror = () => setError("Live stream interrupted — reconnecting…");
+    return () => es.close();
   }, [selectedId]);
 
   const s = detail?.session;
@@ -92,7 +74,7 @@ export default function App() {
             <div className="md:col-span-8"><TokenBreakdown usage={s.usage} /></div>
             <div className="md:col-span-4"><ModelCard spec={detail.model_spec} /></div>
             <div className="md:col-span-4"><TimelineCard session={s} /></div>
-            <div className="md:col-span-4"><AlertsPanel alerts={s.active_alerts} /></div>
+            <div className="md:col-span-4"><AlertsPanel alerts={s.active_alerts} rateLimits={s.rate_limits} /></div>
             <div className="md:col-span-6"><TasksPanel tasks={s.tasks} /></div>
             <div className="md:col-span-6"><HandoffsPanel handoffs={s.handoffs} summaries={s.message_summaries} /></div>
           </div>

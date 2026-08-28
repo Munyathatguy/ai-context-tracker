@@ -1,8 +1,8 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from .alerts import evaluate
 from .config import Config, load_config
-from .models import resolve_model, capabilities_line
+from .models import capabilities_line, resolve_model
 from .state import SessionState, utcnow
 from .timefmt import time_line
 
@@ -45,7 +45,8 @@ class ContextTracker:
 
     # -- usage ----------------------------------------------------------
     def record_usage(self, input_tokens: int, output_tokens: int, cached_tokens: int = 0,
-                     reasoning_tokens: int = 0, model: str = "", summary: str = "") -> dict:
+                     reasoning_tokens: int = 0, model: str = "", summary: str = "",
+                     rl_remaining_tokens: int | None = None, rl_limit_tokens: int | None = None) -> dict:
         switch_brief = self._detect_model_switch(model) if model else None
         u = self.state.usage
         u["input"] += input_tokens
@@ -64,6 +65,18 @@ class ContextTracker:
                                   self.config.red_alert_threshold, self.state.alerts_fired)
             for a in new_alerts:
                 self.state.alerts_fired.append(a["threshold"])
+                self.state.active_alerts.append({**a, "at": utcnow()})
+        if rl_remaining_tokens is not None and rl_limit_tokens:
+            rl_pct = round(100.0 * rl_remaining_tokens / rl_limit_tokens, 1)
+            self.state.rate_limits = {"remaining_tokens": rl_remaining_tokens, "limit_tokens": rl_limit_tokens,
+                                      "pct_remaining": rl_pct, "updated_at": utcnow()}
+            if rl_pct <= 10 and "rate_limit" not in self.state.alerts_fired:
+                self.state.alerts_fired.append("rate_limit")
+                a = {"threshold": "rate_limit", "level": "danger",
+                     "message": (f"⚠️ RATE LIMIT: only {rl_pct}% of the provider token rate limit remains "
+                                 f"({rl_remaining_tokens:,}/{rl_limit_tokens:,} tokens). Slow down, batch work, "
+                                 "or pause briefly to avoid a 429.")}
+                new_alerts.append(a)
                 self.state.active_alerts.append({**a, "at": utcnow()})
         auto_handoff = None
         if (self.config.auto_handoff and self.pct_remaining() <= self.config.danger_threshold
@@ -107,7 +120,7 @@ class ContextTracker:
         self.state.handoffs.append(handoff)
         d = self.config.state_dir / "handoffs"
         d.mkdir(parents=True, exist_ok=True)
-        stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+        stamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
         import json
         (d / f"{self.state.session_id}-{stamp}.json").write_text(json.dumps(handoff, indent=2))
         md = (f"# Session Handoff — {self.state.session_id}\n\n- **When:** {handoff['created_at']}\n"
@@ -129,6 +142,9 @@ class ContextTracker:
             parts.append(f"Tokens: {self.state.usage['total']:,}/{spec['context_window']:,} ({self.pct_used():.1f}% used, {self.pct_remaining():.1f}% left)")
         if self.config.features.get("cost_tracking", True):
             parts.append(f"Cost: ${self.state.cost_usd:.4f}")
+        rl = self.state.rate_limits
+        if rl.get("limit_tokens"):
+            parts.append(f"RL headroom: {rl['pct_remaining']}%")
         return " | ".join(parts)
 
     def status(self) -> dict:

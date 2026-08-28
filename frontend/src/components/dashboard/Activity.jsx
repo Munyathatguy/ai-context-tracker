@@ -6,9 +6,28 @@ const LEVEL = {
   red: { color: "#FF3B30", label: "RED ALERT" },
 };
 
-export const AlertsPanel = ({ alerts = [] }) => (
+export const AlertsPanel = ({ alerts = [], rateLimits }) => (
   <section className="border border-[#222222] bg-[#111111] p-4 h-full" data-testid="alerts-panel">
-    <h2 className="font-heading font-bold text-xs uppercase tracking-widest text-[#888888] mb-3">Alerts</h2>
+    <h2 className="font-heading font-bold text-xs uppercase tracking-widest text-[#888888] mb-3">Alerts & Rate Limit</h2>
+    {rateLimits?.limit_tokens ? (
+      <div className="mb-3 border border-[#222222] p-2" data-testid="rate-limit-watch">
+        <div className="flex justify-between text-[10px] uppercase tracking-widest">
+          <span className="text-[#888888]">rate limit headroom</span>
+          <span className="text-white" data-testid="rate-limit-pct">{rateLimits.pct_remaining}%</span>
+        </div>
+        <div className="h-1.5 bg-[#1c1c1c] mt-1.5">
+          <div className="h-full transition-[width] duration-500" style={{
+            width: `${rateLimits.pct_remaining}%`,
+            backgroundColor: rateLimits.pct_remaining > 30 ? "#00FF00" : rateLimits.pct_remaining > 10 ? "#FFD700" : "#FF3B30",
+          }} />
+        </div>
+        <div className="text-[10px] text-[#666666] mt-1">
+          {(rateLimits.remaining_tokens || 0).toLocaleString()} / {(rateLimits.limit_tokens || 0).toLocaleString()} tokens available
+        </div>
+      </div>
+    ) : (
+      <div className="mb-3 text-[10px] text-[#666666]" data-testid="rate-limit-empty">rate limit headroom: no data yet</div>
+    )}
     {alerts.length === 0 && <div className="text-xs text-[#666666]" data-testid="no-alerts">no active alerts</div>}
     <div className="space-y-2 max-h-48 overflow-y-auto">
       {[...alerts].reverse().map((a, i) => {

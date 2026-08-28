@@ -2,8 +2,8 @@
 __version__ = "0.1.0"
 
 from .config import Config, load_config
+from .models import MODEL_REGISTRY, resolve_model
 from .state import SessionState
 from .tracker import ContextTracker
-from .models import resolve_model, MODEL_REGISTRY
 
-__all__ = ["Config", "load_config", "SessionState", "ContextTracker", "resolve_model", "MODEL_REGISTRY"]
+__all__ = ["MODEL_REGISTRY", "Config", "ContextTracker", "SessionState", "load_config", "resolve_model"]
