@@ -9,12 +9,18 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorClient
+from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
+from typing import List, Optional
+from zoneinfo import ZoneInfo
+
+import yaml
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 sys.path.insert(0, "/app/ai-context-tracker")
+from ai_context_tracker.config import load_config
 from ai_context_tracker.models import resolve_model
 from ai_context_tracker.state import SessionState
 
@@ -89,6 +95,69 @@ async def stream(session_id: str = ""):
 
     return StreamingResponse(gen(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+CONFIG_PATH = STATE_DIR / "config.yaml"
+
+
+class TrackerConfigUpdate(BaseModel):
+    alert_thresholds: Optional[List[int]] = None
+    red_alert_threshold: Optional[int] = None
+    danger_threshold: Optional[int] = None
+    auto_handoff: Optional[bool] = None
+    timezone: Optional[str] = None
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    features: Optional[dict] = None
+
+
+def _effective_config() -> dict:
+    cfg = load_config(str(CONFIG_PATH))
+    return {
+        "alert_thresholds": cfg.alert_thresholds,
+        "red_alert_threshold": cfg.red_alert_threshold,
+        "danger_threshold": cfg.danger_threshold,
+        "auto_handoff": cfg.auto_handoff,
+        "timezone": cfg.timezone,
+        "provider": cfg.provider,
+        "model": cfg.model,
+        "features": cfg.features,
+        "config_path": str(CONFIG_PATH),
+    }
+
+
+@api_router.get("/tracker/config")
+async def get_tracker_config():
+    return _effective_config()
+
+
+@api_router.put("/tracker/config")
+async def update_tracker_config(update: TrackerConfigUpdate):
+    changes = {k: v for k, v in update.model_dump().items() if v is not None}
+    if "timezone" in changes:
+        try:
+            ZoneInfo(changes["timezone"])
+        except Exception:
+            raise HTTPException(status_code=422, detail=f"Unknown timezone: {changes['timezone']}")
+    for k in ("red_alert_threshold", "danger_threshold"):
+        if k in changes and not 1 <= int(changes[k]) <= 99:
+            raise HTTPException(status_code=422, detail=f"{k} must be between 1 and 99")
+    if "alert_thresholds" in changes:
+        ts = sorted({int(t) for t in changes["alert_thresholds"] if 1 <= int(t) <= 99}, reverse=True)
+        if not ts:
+            raise HTTPException(status_code=422, detail="alert_thresholds must contain values between 1 and 99")
+        changes["alert_thresholds"] = ts
+    existing = {}
+    if CONFIG_PATH.is_file():
+        existing = yaml.safe_load(CONFIG_PATH.read_text()) or {}
+    if "features" in changes:
+        merged = dict(existing.get("features") or {})
+        merged.update(changes["features"])
+        changes["features"] = merged
+    existing.update(changes)
+    CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    CONFIG_PATH.write_text(yaml.safe_dump(existing, sort_keys=False))
+    return _effective_config()
 
 
 app.include_router(api_router)

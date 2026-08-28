@@ -35,6 +35,12 @@ A free, open-source MCP (Model Context Protocol) server that injects real-time o
 - Auto resume prompt: MCP server detects prior session on restart, injects one-time "Previous session detected… call resume_session" offer
 - Rate limit watch: record_usage accepts rate-limit headroom (or parsed from headers via integrations.parse_rate_limit_headers); stored in state.rate_limits; alert ≤10%; shown in awareness header, CLI dashboard, and web AlertsPanel; 30 tests total
 
+## Implemented v3 (2026-06, iteration 3 — 100%/100% verified)
+- Threshold Editor: GET/PUT /api/tracker/config (writes /root/.ai-context-tracker/config.yaml, 422 on bad tz/thresholds incl. red/danger 1-99) + SettingsDialog (gear icon: thresholds, red/danger, timezone, auto-handoff, 8 feature switches, sonner toasts)
+- Session Compare: header toggle → CompareView, two dropdowns, side-by-side table (context, tokens, cost, per-turn burn, green = cheaper)
+- Sound Alerts: Web Audio chime on new danger/red alert, mute toggle persisted in localStorage
+- GitHub push: user-side action via Emergent "Save to GitHub" (support guidance provided); workflows activate on push, PyPI needs one-time Trusted Publisher setup
+
 ## Backlog / Next
 - P1: PyPI publish workflow (GitHub Action), demo GIF, CONTRIBUTING.md
 - P2: streamable HTTP transport, rate-limit header surfacing tool, auto-resume prompt on server restart detection
